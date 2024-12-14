@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import spring.cardirectorymanager.exception.DuplicateVinException;
 import spring.cardirectorymanager.model.Car;
 import spring.cardirectorymanager.repository.CarRepository;
 
@@ -37,7 +38,13 @@ public class CarService {
                 });
     }
 
+    @Transactional
     public Car createCar(Car car) {
+        if (carRepository.existsByVin(car.getVin())) {
+            logger.warn("Attempt to create a car with an existing VIN: {}", car.getVin());
+            throw new DuplicateVinException("Car with VIN " + car.getVin() + " already exists!");
+        }
+
         validateYear(car.getYear());
         Car savedCar = carRepository.save(car);
         logger.debug("Saved new car with ID: {}", savedCar.getId());
@@ -46,6 +53,11 @@ public class CarService {
 
     public Car updateCar(UUID id, Car updatedCar) {
         Car existingCar = getCarById(id);
+
+        if (!existingCar.getVin().equals(updatedCar.getVin()) && carRepository.existsByVin(updatedCar.getVin())) {
+            logger.warn("Attempt to update car with an existing VIN: {}", updatedCar.getVin());
+            throw new DuplicateVinException("Car with VIN " + updatedCar.getVin() + " already exists!");
+        }
 
         validateYear(updatedCar.getYear());
 

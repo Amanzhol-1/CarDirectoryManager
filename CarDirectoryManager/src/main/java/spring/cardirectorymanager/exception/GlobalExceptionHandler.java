@@ -2,9 +2,7 @@ package spring.cardirectorymanager.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -16,13 +14,14 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @ControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,
             HttpHeaders headers,
-            HttpStatus status,
+            HttpStatusCode status,
             WebRequest request) {
 
         Map<String, Object> body = new LinkedHashMap<>();
@@ -80,5 +79,17 @@ public class GlobalExceptionHandler {
 
         logger.error("Unhandled exception: {}", ex.getMessage(), ex);
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(DuplicateVinException.class)
+    public ResponseEntity<Object> handleDuplicateVinException(DuplicateVinException ex, WebRequest request) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Duplicate VIN");
+        body.put("message", ex.getMessage());
+
+        logger.warn("Duplicate VIN error: {}", ex.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 }

@@ -6,4 +6,7 @@ import spring.cardirectorymanager.model.Car;
 import java.util.UUID;
 
 public interface CarRepository extends JpaRepository<Car, UUID> {
+
+    boolean existsByVin(String vin);
+
 }
